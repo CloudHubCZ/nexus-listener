@@ -31,6 +31,12 @@ RUN mkdir -p /etc/docker && \
 # Expose Docker socket
 VOLUME /var/run/docker.sock
 
+# Add Skopeo's official PPA (Personal Package Archive) to get the latest version
+RUN curl -fsSL https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key | apt-key add - && \
+    add-apt-repository "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /" && \
+    apt-get update && \
+    apt-get install -y skopeo
+
 COPY target/*.jar app.jar
 
 # Expose the port your Spring app runs on

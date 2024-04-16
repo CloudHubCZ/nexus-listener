@@ -13,14 +13,16 @@ class RestController(
 
     @PostMapping("/webhook")
     fun processWebhook(@RequestBody request: WebhookRequest): String {
-        if (request.component != null && request.action == "CREATED" && request.component.format == "docker") {
+        return if (request.component != null && request.action == "CREATED" && !request.component.version!!.contains("scanned") && request.component.format == "docker") {
+            println("Webhook received, request=" + request)
             val imageName = "${nexusProperties.nexusUrl}/${request.component!!.name}:${request.component.version}"
+            println("New image push detected, image=" + imageName)
             val result =
                 //scanningService.scanImage("${nexusProperties.nexusUrl}/${request.component!!.name}:${request.component.version}")
                 kubernetesService.scanImage(imageName)
-            return result!!
+            result!!
         } else {
-            return "bad request"
+            "bad request"
         }
     }
 

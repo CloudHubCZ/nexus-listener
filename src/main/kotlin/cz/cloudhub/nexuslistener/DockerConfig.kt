@@ -19,9 +19,9 @@ class DockerConfig(
     fun dockerClient(): DockerClient {
         val config = DefaultDockerClientConfig.createDefaultConfigBuilder()
             .withRegistryEmail("info@cloudhub.cz")
-            //.withRegistryPassword(nexusProperties.password)
-            //.withRegistryUsername(nexusProperties.username)
-            //.withDockerTlsVerify("0")
+            .withRegistryPassword(nexusProperties.password)
+            .withRegistryUsername(nexusProperties.username)
+            .withDockerTlsVerify("0")
             .withDockerHost("unix:///var/run/docker.sock").build()
 
 

@@ -1,0 +1,1 @@
+podman build --platform linux/amd64 -t davidmachacek/nexus-listener:20240416.1 -f Containerfile && podman push avidmachacek/nexus-listener:20240416.1

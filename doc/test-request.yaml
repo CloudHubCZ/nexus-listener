@@ -1,0 +1,16 @@
+  curl --location 'localhost:8080/webhook' \
+  --header 'Content-Type: application/json' \
+    --data '{
+  "timestamp": "2024-04-15T15:08:36.014+00:00",
+  "nodeId": "FC37EAA7-232F0CD0-458BC765-3E539E08-21F6A621",
+  "initiator": "admin/10.224.0.113",
+  "repositoryName": "cloudhub",
+  "action": "CREATED",
+  "component": {
+    "id": "4b378653591c6722a43f388d2818ef3f",
+    "componentId": "Y2xvdWRodWI6NGIzNzg2NTM1OTFjNjcyMmE0M2YzODhkMjgxOGVmM2Y",
+    "format": "docker",
+    "name": "initiator",
+    "version": "2"
+  }
+  }'

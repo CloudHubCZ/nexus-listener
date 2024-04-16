@@ -10,12 +10,16 @@ import com.google.gson.reflect.TypeToken
 
 @Service
 class KubernetesService(
-    val kubeApiClient: ApiClient
+    val kubeApiClient: ApiClient,
+    val dockerService: DockerService,
+    val commandLineService: CommandLineService,
+    val nexusProperties: NexusProperties
 ) {
 
     fun scanImage(imageName: String): String {
-        val api = CoreV1Api(kubeApiClient)
         val currentTimeMillis = System.currentTimeMillis()
+        println("Initializing Trivy scan, starting new container, name=" + "trivy-scan-${currentTimeMillis}, scannedImage=$imageName")
+        val api = CoreV1Api(kubeApiClient)
         val pod = V1Pod().apply {
             apiVersion = "v1"
             kind = "Pod"
@@ -46,7 +50,7 @@ class KubernetesService(
 
         val namespace = "nexus"
         api.createNamespacedPod(namespace, pod, null, null, null, null)
-        println("HALLOOOOO, looking for metadata.name=${pod.metadata!!.name} on " + pod.metadata!!.name,)
+        println("Trivy container started, waiting for scan to finish")
         // Watch for pod to complete
         //"metadata.name=${pod.metadata!!.name}"
         Watch.createWatch<V1Pod>(
@@ -64,21 +68,32 @@ class KubernetesService(
                     || eventPod.status!!.phase!! == "Completed")) {
                     var logs = readLogs(api, namespace, pod.metadata?.name!!)
                     logs = "{" + logs.substringAfter("{")
-
-                    val response = Gson().fromJson(logs, TrivyResponse::class.java)
                     println("----")
+                    println("Parsed response:")
+                    val response = Gson().fromJson(logs, TrivyResponse::class.java)
                     println(response)
                     println("----")
-                    println("Final statistics:")
+                    println("Final statistics for image $imageName:")
 
                     val high = response.Results!!.get(0).Vulnerabilities!!.filter { it.Severity == "HIGH" }
                     val medium = response.Results!!.get(0).Vulnerabilities!!.filter { it.Severity == "MEDIUM" }
                     val low = response.Results!!.get(0).Vulnerabilities!!.filter { it.Severity == "LOW" }
-                    println("----")
                     println("HIGH = " + high.count())
                     println("MEDIUM = " + medium.count())
                     println("LOW = " + low.count())
-
+                    println("----")
+                    if (high.count() < 5) {
+                        println("There is less then 5 HIGH vulnerabilities.. copying to main repository!")
+                        val repo = imageName.substringBefore("/")
+                        val image = imageName.substringAfter("/").substringBefore(":")
+                        val tag = imageName.substringAfterLast(":")
+                        //dockerService.pullImage(repo, image, tag)
+                        val copyImageCommand = "skopeo copy --src-creds=${nexusProperties.username}:${nexusProperties.password} --dest-creds=${nexusProperties.username}:${nexusProperties.password} --dest-tls-verify=false --src-tls-verify=false docker://${repo}/${image}:${tag} docker://${repo}/${image}:${tag}-scanned"
+                        println("Running command:")
+                        println(copyImageCommand)
+                        commandLineService.runCommand(listOf("sh", "-c", copyImageCommand))
+                        println("Successfully done! Saved as ${repo}/${image}:${tag}-scanned")
+                    }
                     return logs
                 }
             }
