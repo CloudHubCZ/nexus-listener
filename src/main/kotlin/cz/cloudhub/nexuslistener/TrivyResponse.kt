@@ -11,6 +11,7 @@ data class TriveResult(
 data class Vulnerability(
     val VulnerabilityID: String?,
     val Status: String?,
+    val PkgName: String?,
     val Severity: String?,
     val Title: String?
 )
